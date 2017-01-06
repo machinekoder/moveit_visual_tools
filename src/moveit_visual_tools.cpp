@@ -1393,8 +1393,6 @@ bool MoveItVisualTools::publishRobotState(const robot_state::RobotState& robot_s
 
 bool MoveItVisualTools::hideRobot()
 {
-  static const std::string VJOINT_NAME = "virtual_joint";
-
   // Always load the robot state before using
   loadSharedRobotState();
 
@@ -1478,60 +1476,75 @@ planning_scene_monitor::PlanningSceneMonitorPtr MoveItVisualTools::getPlanningSc
   return psm_;
 }
 
-bool MoveItVisualTools::checkForVirtualJoint(const moveit::core::RobotState& robot_state)
-{
-  static const std::string VJOINT_NAME = "virtual_joint";
-
-  // Check if joint exists
-  if (!robot_state.getRobotModel()->hasJointModel(VJOINT_NAME))
-  {
-    ROS_WARN_STREAM_NAMED("moveit_visual_tools", "Joint '" << VJOINT_NAME << "' does not exist.");
-    const std::vector<std::string>& names = robot_state.getRobotModel()->getJointModelNames();
-    ROS_WARN_STREAM_NAMED("moveit_visual_tools", "Available names:");
-    std::copy(names.begin(), names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-
-    return false;
-  }
-
-  // Check if variables exist
-  if (!robot_state.getRobotModel()->getJointModel(VJOINT_NAME)->hasVariable(VJOINT_NAME + "/trans_x"))
-  {
-    // Debug
-    ROS_WARN_STREAM_NAMED("moveit_visual_tools", "Variables for joint '" << VJOINT_NAME
-                                                                         << "' do not exist. Try making this vjoint "
-                                                                            "floating");
-    ROS_WARN_STREAM_NAMED("moveit_visual_tools", "The only available joint variables are:");
-    const std::vector<std::string>& var_names =
-        robot_state.getRobotModel()->getJointModel(VJOINT_NAME)->getVariableNames();
-    std::copy(var_names.begin(), var_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-    return false;
-  }
-
-  return true;
-}
-
 bool MoveItVisualTools::applyVirtualJointTransform(moveit::core::RobotState& robot_state, const Eigen::Affine3d& offset)
 {
-  static const std::string VJOINT_NAME = "virtual_joint";
-
-  // Error check
-  if (!checkForVirtualJoint(robot_state))
+  // Get the name of the virtual joint if it exists
+  std::string vjoint_name;
+  if (!getSingleVirtualJointName(vjoint_name))
   {
-    ROS_ERROR_STREAM_NAMED("moveit_visual_tools", "Unable to apply virtual joint transform");
+    ROS_WARN_STREAM_NAMED("visual_tools", "Unable to apply virtual joint transform");
     return false;
   }
 
   // Apply translation
-  robot_state.setVariablePosition(VJOINT_NAME + "/trans_x", offset.translation().x());
-  robot_state.setVariablePosition(VJOINT_NAME + "/trans_y", offset.translation().y());
-  robot_state.setVariablePosition(VJOINT_NAME + "/trans_z", offset.translation().z());
+  robot_state.setVariablePosition(vjoint_name + "/trans_x", offset.translation().x());
+  robot_state.setVariablePosition(vjoint_name + "/trans_y", offset.translation().y());
+  robot_state.setVariablePosition(vjoint_name + "/trans_z", offset.translation().z());
 
   // Apply rotation
   Eigen::Quaterniond q(offset.rotation());
-  robot_state.setVariablePosition(VJOINT_NAME + "/rot_x", q.x());
-  robot_state.setVariablePosition(VJOINT_NAME + "/rot_y", q.y());
-  robot_state.setVariablePosition(VJOINT_NAME + "/rot_z", q.z());
-  robot_state.setVariablePosition(VJOINT_NAME + "/rot_w", q.w());
+  robot_state.setVariablePosition(vjoint_name + "/rot_x", q.x());
+  robot_state.setVariablePosition(vjoint_name + "/rot_y", q.y());
+  robot_state.setVariablePosition(vjoint_name + "/rot_z", q.z());
+  robot_state.setVariablePosition(vjoint_name + "/rot_w", q.w());
+
+  return true;
+}
+
+bool MoveItVisualTools::getSingleVirtualJointName(std::string& name)
+{
+  // Search for virtual joints in the robot
+  if (robot_model_->getVirtualJointModels().size() > 1)
+  {
+    ROS_WARN_STREAM_NAMED(name_, "More than 1 virtual joint exists, this capability is currently not implemented");
+    return false;
+  }
+  else if (robot_model_->getVirtualJointModels().size() == 0)
+  {
+    ROS_WARN_STREAM_NAMED(name_, "No virtual joint exists, some capabilities disabled");
+    return false;
+  }
+
+  if (robot_model_->getVirtualJointModels()[0]->getType() != moveit::core::JointModel::FLOATING)
+  {
+    ROS_WARN_STREAM_NAMED(name_, "Virtual joint is not floating type, not implemented");
+    return false;
+  }
+
+  // Get name
+  name = robot_model_->getVirtualJointModels()[0]->getName();
+
+  std::cout << "Check joint model " << name << std::endl;
+
+    const std::vector<std::string>& var_names =
+      robot_model_->getJointModelNames();
+    std::copy(var_names.begin(), var_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+
+  // Check if variables exist
+  if (!robot_model_->getJointModel(name)->hasVariable(name + "/trans_x"))
+  {
+    // Debug
+    ROS_WARN_STREAM_NAMED("visual_tools", "Variables for joint '" << name
+                                                                         << "' do not exist. Try making this vjoint "
+                                                                            "floating");
+    ROS_WARN_STREAM_NAMED("visual_tools", "The only available joint variables are:");
+    const std::vector<std::string>& var_names =
+        robot_model_->getJointModel(name)->getVariableNames();
+    std::copy(var_names.begin(), var_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+    return false;
+  }
+
+  ROS_INFO_STREAM_NAMED(name_, "Virtual joint name: " << name);
 
   return true;
 }

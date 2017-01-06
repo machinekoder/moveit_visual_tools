@@ -585,7 +585,7 @@ public:
   bool hideRobot();
 
   /** \brief Before publishing a robot state, optionally change its root transform */
-  static bool applyVirtualJointTransform(moveit::core::RobotState &robot_state, const Eigen::Affine3d &offset);
+  bool applyVirtualJointTransform(moveit::core::RobotState &robot_state, const Eigen::Affine3d &offset);
 
   /**
    * \brief Print to console the current robot state's joint values within its limits visually
@@ -601,10 +601,11 @@ private:
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor();
 
   /**
-   * \brief Error check that the robot's SRDF was properly setup with a virtual joint that was named a certain way
+   * \brief Programmatically find the name of the virtual joint, if one exists, from the SRDF
+   * \param name - name of virtual joint to find
    * \return true on success
    */
-  static bool checkForVirtualJoint(const moveit::core::RobotState &robot_state);
+  bool getSingleVirtualJointName(std::string& name);
 
 protected:
   // Pointer to a Planning Scene Monitor
