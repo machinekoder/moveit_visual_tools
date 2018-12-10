@@ -64,10 +64,10 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Demo executable
-add_executable(${PROJECT_NAME}_demo src/${PROJECT_NAME}_demo.cpp)
-target_link_libraries(${PROJECT_NAME}_demo
-  ${catkin_LIBRARIES} ${PROJECT_NAME}
-)
+#add_executable(${PROJECT_NAME}_demo src/${PROJECT_NAME}_demo.cpp)
+#target_link_libraries(${PROJECT_NAME}_demo
+#  ${catkin_LIBRARIES} ${PROJECT_NAME}
+#)
 
 
 #############
@@ -93,7 +93,7 @@ install(DIRECTORY launch    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 install(DIRECTORY resources DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 # Install executables
-install(TARGETS ${PROJECT_NAME}_demo
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(TARGETS ${PROJECT_NAME}_demo
+#  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
